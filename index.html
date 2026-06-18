@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgencyAI Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F5F5F7;
+      color: #1D1D1F;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: white;
+      border-bottom: 1px solid #E5E5E7;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { font-size: 16px; font-weight: 700; }
+    .logo span { color: #7C5CFC; }
+    .system-status { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #E1F5EE; color: #085041; font-weight: 500; }
+
+    .layout { display: grid; grid-template-columns: 200px 1fr; min-height: calc(100vh - 52px); }
+
+    .sidebar {
+      background: white;
+      border-right: 1px solid #E5E5E7;
+      padding: 20px 0;
+    }
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0 16px;
+      margin-bottom: 4px;
+      margin-top: 16px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #555;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .nav-item:hover { background: #F5F5F7; }
+    .nav-item.active { background: #F0EDFE; color: #7C5CFC; font-weight: 500; border-right: 2px solid #7C5CFC; }
+    .nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .badge { background: #7C5CFC; color: white; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-left: auto; }
+
+    .main { padding: 24px; overflow-y: auto; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #E5E5E7;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 14px;
+    }
+
+    .brief-textarea {
+      width: 100%;
+      font-size: 14px;
+      color: #1D1D1F;
+      background: #F5F5F7;
+      border: 1px solid #E5E5E7;
+      border-radius: 8px;
+      padding: 12px;
+      resize: none;
+      height: 80px;
+      font-family: inherit;
+      line-height: 1.5;
+      transition: border-color 0.2s;
+    }
+    .brief-textarea:focus { outline: none; border-color: #7C5CFC; }
+    .brief-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+    .brief-hint { font-size: 12px; color: #999; }
+    .btn-run {
+      background: #7C5CFC;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-run:hover { background: #6A4AE8; }
+    .btn-run:disabled { background: #C4B5FD; cursor: not-allowed; }
+
+    .agents-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .agent-card {
+      background: #F5F5F7;
+      border-radius: 10px;
+      padding: 14px;
+      border: 1px solid #E5E5E7;
+      transition: border-color 0.3s;
+    }
+    .agent-card.working { border-color: #F59E0B; background: #FFFBEB; }
+    .agent-card.done { border-color: #10B981; background: #ECFDF5; }
+    .agent-card.error { border-color: #EF4444; background: #FEF2F2; }
+    .agent-name { font-size: 13px; font-weight: 600; color: #1D1D1F; margin-bottom: 2px; }
+    .agent-role { font-size: 11px; color: #999; margin-bottom: 10px; }
+    .agent-status-pill {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+    .pill-idle { background: #E5E5E7; color: #666; }
+    .pill-working { background: #FEF3CD; color: #7A4F00; }
+    .pill-done { background: #D1FAE5; color: #065F46; }
+    .pill-error { background: #FEE2E2; color: #991B1B; }
+
+    .activity-feed { max-height: 160px; overflow-y: auto; }
+    .activity-item {
+      font-size: 12px;
+      color: #555;
+      padding: 6px 0;
+      border-bottom: 1px solid #F5F5F7;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-time { color: #999; white-space: nowrap; flex-shrink: 0; }
+    .activity-empty { font-size: 13px; color: #999; text-align: center; padding: 20px; }
+
+    .queue-item {
+      padding: 14px 0;
+      border-bottom: 1px solid #F5F5F7;
+    }
+    .queue-item:last-child { border-bottom: none; }
+    .queue-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .queue-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .type-writer { background: #D1FAE5; color: #065F46; }
+    .type-designer { background: #FEE2E2; color: #991B1B; }
+    .type-social { background: #EDE9FE; color: #5B21B6; }
+    .queue-title { font-size: 13px; font-weight: 500; color: #1D1D1F; flex: 1; }
+    .queue-content {
+      font-size: 12px;
+      color: #666;
+      background: #F5F5F7;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      max-height: 80px;
+      overflow-y: auto;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .queue-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-approve {
+      background: #D1FAE5;
+      color: #065F46;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-approve:hover { background: #A7F3D0; }
+    .btn-revise {
+      background: #F5F5F7;
+      color: #555;
+      border: 1px solid #E5E5E7;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-revise:hover { background: #E5E5E7; }
+    .revision-input {
+      flex: 1;
+      font-size: 12px;
+      border: 1px solid #E5E5E7;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: inherit;
+      color: #1D1D1F;
+    }
+    .revision-input:focus { outline: none; border-color: #7C5CFC; }
+    .queue-empty { font-size: 13px; color: #999; text-align: center; padding: 30px; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .content-block {
+      background: #F5F5F7;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .content-block-title { font-size: 12px; font-weight: 600; color: #7C5CFC; margin-bottom: 8px; }
+    .content-block-text { font-size: 13px; color: #333; line-height: 1.6; white-space: pre-wrap; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #E5E5E7; border-radius: 2px; }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .agents-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Agency<span>AI</span></div>
+  <span class="system-status" id="systemStatus">● All agents ready</span>
+</div>
+
+<div class="layout">
+
+  <div class="sidebar">
+    <div class="nav-label">Workspace</div>
+    <div class="nav-item active" onclick="showView('dashboard')">
+      <div class="nav-dot" style="background:#7C5CFC"></div> Dashboard
+    </div>
+    <div class="nav-item" onclick="showView('queue')">
+      <div class="nav-dot" style="background:#F59E0B"></div> Review Queue
+      <span class="badge" id="queueBadge">0</span>
+    </div>
+    <div class="nav-item" onclick="showView('approved')">
+      <div class="nav-dot" style="background:#10B981"></div> Approved
+    </div>
+    <div class="nav-label">Agents</div>
+    <div class="nav-item">
+      <div class="nav-dot" style="background:#7C5CFC"></div> VP Marketing
+    </div>
+    <div class="nav-item">
+      <div class="nav-dot" style="background:#10B981"></div> Writer
+    </div>
+    <div class="nav-item">
+      <div class="nav-dot" style="background:#EF4444"></div> Designer
+    </div>
+    <div class="nav-item">
+      <div class="nav-dot" style="background:#3B82F6"></div> Social Media
+    </div>
+    <div class="nav-label">Settings</div>
+    <div class="nav-item" onclick="showView('settings')">
+      <div class="nav-dot" style="background:#999"></div> Brand Voice
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="view active" id="view-dashboard">
+
+      <div class="card">
+        <div class="card-title">New Campaign Brief</div>
+        <textarea class="brief-textarea" id="briefInput" placeholder="Describe what you need… e.g. 'Create a launch campaign for our new summer product line targeting homeowners aged 35-50. Tone: warm and aspirational. Platforms: Instagram and LinkedIn.'"></textarea>
+        <div class="brief-footer">
+          <span class="brief-hint">VP of Marketing will delegate to all agents automatically</span>
+          <button class="btn-run" id="runBtn" onclick="runAgents()">▶ Run Agents</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Agent Status</div>
+        <div class="agents-grid">
+          <div class="agent-card" id="agent-vp">
+            <div class="agent-name">VP Marketing</div>
+            <div class="agent-role">Orchestrator</div>
+            <span class="agent-status-pill pill-idle" id="status-vp">Idle</span>
+          </div>
+          <div class="agent-card" id="agent-writer">
+            <div class="agent-name">Writer</div>
+            <div class="agent-role">Content</div>
+            <span class="agent-status-pill pill-idle" id="status-writer">Idle</span>
+          </div>
+          <div class="agent-card" id="agent-designer">
+            <div class="agent-name">Designer</div>
+            <div class="agent-role">Visuals</div>
+            <span class="agent-status-pill pill-idle" id="status-designer">Idle</span>
+          </div>
+          <div class="agent-card" id="agent-social">
+            <div class="agent-name">Social Media</div>
+            <div class="agent-role">Publishing</div>
+            <span class="agent-status-pill pill-idle" id="status-social">Idle</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Activity Feed</div>
+        <div class="activity-feed" id="activityFeed">
+          <div class="activity-empty">No activity yet — run your first campaign above</div>
+        </div>
+      </div>
+
+      <div class="card" id="outputCard" style="display:none">
+        <div class="card-title">Latest Output — Ready for Review</div>
+        <div id="outputContent"></div>
+      </div>
+
+    </div>
+
+    <div class="view" id="view-queue">
+      <div class="card">
+        <div class="card-title">Review Queue</div>
+        <div id="queueList">
+          <div class="queue-empty">Loading queue...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-approved">
+      <div class="card">
+        <div class="card-title">Approved Content</div>
+        <div id="approvedList">
+          <div class="queue-empty">No approved content yet</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-settings">
+      <div class="card">
+        <div class="card-title">Brand Voice & Settings</div>
+        <p style="font-size:13px;color:#666;margin-bottom:16px">These instructions are injected into every agent so all content stays on-brand.</p>
+        <textarea class="brief-textarea" id="brandVoice" style="height:120px" placeholder="e.g. Our brand is warm, professional, and approachable. We avoid jargon. Our audience is homeowners aged 35-55. We never use exclamation points. Our tone is confident but never pushy."></textarea>
+        <div style="margin-top:12px">
+          <button class="btn-run" onclick="saveBrandVoice()">Save Brand Voice</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentResults = {};
+  let brandVoice = localStorage.getItem('brandVoice') || '';
+
+  if (brandVoice) document.getElementById('brandVoice').value = brandVoice;
+
+  function saveBrandVoice() {
+    brandVoice = document.getElementById('brandVoice').value;
+    localStorage.setItem('brandVoice', brandVoice);
+    alert('Brand voice saved!');
+  }
+
+  function showView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    if (view === 'queue') loadQueue();
+    if (view === 'approved') loadApproved();
+  }
+
+  function setAgentStatus(agent, status, label) {
+    const card = document.getElementById('agent-' + agent);
+    const pill = document.getElementById('status-' + agent);
+    card.className = 'agent-card ' + status;
+    pill.className = 'agent-status-pill pill-' + status;
+    pill.textContent = label;
+  }
+
+  function addActivity(message) {
+    const feed = document.getElementById('activityFeed');
+    const empty = feed.querySelector('.activity-empty');
+    if (empty) empty.remove();
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.innerHTML = `<span class="activity-time">${now}</span><span>${message}</span>`;
+    feed.insertBefore(item, feed.firstChild);
+  }
+
+  async function runAgents() {
+    const brief = document.getElementById('briefInput').value.trim();
+    if (!brief) { alert('Please enter a campaign brief first.'); return; }
+
+    const runBtn = document.getElementById('runBtn');
+    runBtn.disabled = true;
+    runBtn.textContent = '⏳ Running...';
+    document.getElementById('systemStatus').textContent = '● Agents working...';
+    document.getElementById('systemStatus').style.background = '#FEF3CD';
+    document.getElementById('systemStatus').style.color = '#7A4F00';
+    document.getElementById('outputCard').style.display = 'none';
+    currentResults = {};
+
+    ['vp','writer','designer','social'].forEach(a => setAgentStatus(a, 'idle', 'Idle'));
+
+    try {
+      const response = await fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brief: brandVoice ? `Brand Voice: ${brandVoice}\n\nBrief: ${brief}` : brief })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const lines = decoder.decode(value).split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              handleAgentUpdate(data);
+            } catch(e) {}
+          }
+        }
+      }
+    } catch (error) {
+      addActivity('❌ Error: ' + error.message);
+    }
+
+    runBtn.disabled = false;
+    runBtn.textContent = '▶ Run Agents';
+    document.getElementById('systemStatus').textContent = '● All agents ready';
+    document.getElementById('systemStatus').style.background = '#E1F5EE';
+    document.getElementById('systemStatus').style.color = '#085041';
+  }
+
+  function handleAgentUpdate(data) {
+    const nameMap = { vp: 'VP Marketing', writer: 'Writer', designer: 'Designer', social: 'Social Media', system: 'System' };
+
+    if (data.status === 'working') {
+      setAgentStatus(data.agent, 'working', 'Working...');
+      addActivity(`🤖 ${nameMap[data.agent]}: ${data.message}`);
+    } else if (data.status === 'done') {
+      setAgentStatus(data.agent, 'done', 'Done ✓');
+      addActivity(`✅ ${nameMap[data.agent]} completed`);
+      if (data.result) currentResults[data.agent] = data.result;
+      if (Object.keys(currentResults).length >= 3) showOutput();
+    } else if (data.status === 'saving') {
+      addActivity(`💾 ${data.message}`);
+    } else if (data.status === 'complete') {
+      addActivity(`🎉 ${data.message}`);
+      loadQueueBadge();
+    } else if (data.status === 'error') {
+      addActivity(`❌ Error: ${data.message}`);
+    }
+  }
+
+  function showOutput() {
+    const card = document.getElementById('outputCard');
+    const content = document.getElementById('outputContent');
+    card.style.display = 'block';
+
+    const sections = [
+      { key: 'writer', label: '✍️ Writer — Content' },
+      { key: 'designer', label: '🎨 Designer — Visual Brief' },
+      { key: 'social', label: '📱 Social Media — Posts' }
+    ];
+
+    content.innerHTML = sections.map(s => currentResults[s.key] ? `
+      <div class="content-block">
+        <div class="content-block-title">${s.label}</div>
+        <div class="content-block-text">${currentResults[s.key]}</div>
+      </div>` : '').join('');
+
+    card.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function loadQueueBadge() {
+    try {
+      const res = await fetch('/api/queue');
+      const items = await res.json();
+      document.getElementById('queueBadge').textContent = items.length;
+    } catch(e) {}
+  }
+
+  async function loadQueue() {
+    const list = document.getElementById('queueList');
+    list.innerHTML = '<div class="queue-empty">Loading...</div>';
+    try {
+      const res = await fetch('/api/queue');
+      const items = await res.json();
+      if (!items.length) { list.innerHTML = '<div class="queue-empty">No items waiting for review</div>'; return; }
+      list.innerHTML = items.map(item => `
+        <div class="queue-item" id="qi-${item.id}">
+          <div class="queue-header">
+            <span class="queue-type type-${(item.Agent||'writer').toLowerCase().replace(' ','-')}">${item.Agent || 'Content'}</span>
+            <span class="queue-title">${item.Name || 'Untitled'}</span>
+          </div>
+          <div class="queue-content">${item.Content || ''}</div>
+          <div class="queue-actions">
+            <input class="revision-input" id="note-${item.id}" placeholder="Revision notes (optional)...">
+            <button class="btn-approve" onclick="updateItem('${item.id}', 'Approved')">✓ Approve</button>
+            <button class="btn-revise" onclick="updateItem('${item.id}', 'Needs Revision')">↩ Revise</button>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      list.innerHTML = '<div class="queue-empty">Could not load queue — check Airtable setup</div>';
+    }
+  }
+
+  async function loadApproved() {
+    document.getElementById('approvedList').innerHTML = '<div class="queue-empty">Approved items appear here after you approve them from the Review Queue</div>';
+  }
+
+  async function updateItem(id, status) {
+    const notes = document.getElementById('note-' + id)?.value || '';
+    try {
+      await fetch('/api/queue/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, notes })
+      });
+      document.getElementById('qi-' + id)?.remove();
+      addActivity(`${status === 'Approved' ? '✅ Approved' : '↩ Sent for revision'}: item updated`);
+      loadQueueBadge();
+    } catch(e) {
+      alert('Could not update item. Check Airtable connection.');
+    }
+  }
+
+  loadQueueBadge();
+</script>
+
+</body>
+</html>
