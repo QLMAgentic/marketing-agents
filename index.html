@@ -246,14 +246,32 @@
     .platform-sections { padding: 16px; }
     .platform-block { margin-bottom: 16px; }
     .platform-block:last-child { margin-bottom: 0; }
-    .platform-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: white;
-      padding: 3px 10px;
-      border-radius: 4px;
-      display: inline-block;
-      margin-bottom: 8px;
+    .platform-tabs { display: flex; gap: 6px; padding: 12px 16px 0; border-top: 1px solid #F5F5F7; }
+    .platform-tab {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid #E5E5E7;
+      border-bottom: none;
+      cursor: pointer;
+      background: #F5F5F7;
+      color: #999;
+    }
+    .platform-tab.active { background: white; color: #1D1D1F; border-bottom: 1px solid white; margin-bottom: -1px; }
+    .platform-tab-instagram.active { color: #E1306C; }
+    .platform-tab-facebook.active { color: #1877F2; }
+    .platform-tab-tiktok.active { color: #000000; }
+    .platform-tab-designer.active { color: #7C5CFC; }
+    .platform-panel { display: none; padding: 16px; border-top: 1px solid #E5E5E7; }
+    .platform-panel.active { display: block; }
+    .platform-content-full {
+      font-size: 13px;
+      color: #333;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
     }
     .platform-instagram { background: #E1306C; }
     .platform-facebook { background: #1877F2; }
@@ -584,31 +602,24 @@
             </div>
           </div>
 
-          <!-- Platform Sections -->
-          <div class="platform-sections">
-            ${parsed.instagram ? `
-            <div class="platform-block">
-              <span class="platform-label platform-instagram">📷 Instagram</span>
-              <div class="platform-content">${parsed.instagram.substring(0, 600)}${parsed.instagram.length > 600 ? '...' : ''}</div>
-            </div>` : ''}
-            
-            ${parsed.facebook ? `
-            <div class="platform-block">
-              <span class="platform-label platform-facebook">👥 Facebook</span>
-              <div class="platform-content">${parsed.facebook.substring(0, 600)}${parsed.facebook.length > 600 ? '...' : ''}</div>
-            </div>` : ''}
-            
-            ${parsed.tiktok ? `
-            <div class="platform-block">
-              <span class="platform-label platform-tiktok">🎵 TikTok</span>
-              <div class="platform-content">${parsed.tiktok.substring(0, 600)}${parsed.tiktok.length > 600 ? '...' : ''}</div>
-            </div>` : ''}
-
-            ${!parsed.instagram && !parsed.facebook ? `
-            <div class="platform-block">
-              <span class="platform-label platform-instagram">📱 Content</span>
-              <div class="platform-content">${(item.Content || '').substring(0, 800)}...</div>
-            </div>` : ''}
+          <!-- Platform Tabs -->
+          <div class="platform-tabs">
+            <div class="platform-tab platform-tab-instagram active" onclick="switchTab('${item.id}', 'instagram')">📷 Instagram</div>
+            <div class="platform-tab platform-tab-facebook" onclick="switchTab('${item.id}', 'facebook')">👥 Facebook</div>
+            <div class="platform-tab platform-tab-tiktok" onclick="switchTab('${item.id}', 'tiktok')">🎵 TikTok</div>
+            <div class="platform-tab platform-tab-designer" onclick="switchTab('${item.id}', 'designer')">🎨 Design Brief</div>
+          </div>
+          <div class="platform-panel active" id="tab-instagram-${item.id}">
+            <div class="platform-content-full">${parsed.instagram || parsed.writer || (item.Content || '').substring(0, 1000)}</div>
+          </div>
+          <div class="platform-panel" id="tab-facebook-${item.id}">
+            <div class="platform-content-full">${parsed.facebook || 'Facebook content included in full content above'}</div>
+          </div>
+          <div class="platform-panel" id="tab-tiktok-${item.id}">
+            <div class="platform-content-full">${parsed.tiktok || 'TikTok content included in full content above'}</div>
+          </div>
+          <div class="platform-panel" id="tab-designer-${item.id}">
+            <div class="platform-content-full">${parsed.designer || 'No design brief available'}</div>
           </div>
 
           <!-- VP Notes -->
@@ -652,7 +663,15 @@
     card.classList.toggle('card-open', !isOpen);
     arrow.textContent = isOpen ? '▼' : '▲';
   }
-
+function switchTab(id, tab) {
+    const tabs = ['instagram', 'facebook', 'tiktok', 'designer'];
+    tabs.forEach(t => {
+      const panel = document.getElementById(`tab-${t}-${id}`);
+      const tabEl = document.querySelector(`#card-${id} .platform-tab-${t}`);
+      if (panel) panel.classList.toggle('active', t === tab);
+      if (tabEl) tabEl.classList.toggle('active', t === tab);
+    });
+  }
   function toggleRevision(id) {
     const content = document.getElementById('revision-' + id);
     const arrow = document.getElementById('rev-arrow-' + id);
