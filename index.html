@@ -277,8 +277,15 @@
       <div class="card">
         <div class="card-title">New Campaign Brief</div>
         <textarea class="brief-textarea" id="briefInput" placeholder="Describe what you need… e.g. 'Create a launch campaign for our new summer product line targeting homeowners aged 35-50. Tone: warm and aspirational. Platforms: Instagram and LinkedIn.'"></textarea>
-        <div class="brief-footer">
-          <span class="brief-hint">VP of Marketing will delegate to all agents automatically</span>
+<div class="brief-footer">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="brief-hint">Pieces per run:</span>
+            <select id="numPieces" style="font-size:13px;border:1px solid #E5E5E7;border-radius:6px;padding:4px 8px;background:white">
+              <option value="3">3 pieces</option>
+              <option value="4">4 pieces</option>
+              <option value="5">5 pieces</option>
+            </select>
+          </div>
           <button class="btn-run" id="runBtn" onclick="runAgents()">▶ Run Agents</button>
         </div>
       </div>
@@ -394,10 +401,11 @@
     feed.insertBefore(item, feed.firstChild);
   }
 
-  async function runAgents() {
+async function runAgents() {
     const brief = document.getElementById('briefInput').value.trim();
     if (!brief) { alert('Please enter a campaign brief first.'); return; }
 
+    const numPieces = parseInt(document.getElementById('numPieces')?.value || 3);
     const runBtn = document.getElementById('runBtn');
     runBtn.disabled = true;
     runBtn.textContent = '⏳ Running...';
@@ -410,38 +418,81 @@
     ['vp','writer','designer','social'].forEach(a => setAgentStatus(a, 'idle', 'Idle'));
 
     try {
-      const response = await fetch('/api/run', {
+      // Start the job
+      const startRes = await fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brief: brandVoice ? `Brand Voice: ${brandVoice}\n\nBrief: ${brief}` : brief })
+        body: JSON.stringify({ 
+          brief: brandVoice ? `Brand Voice: ${brandVoice}\n\nBrief: ${brief}` : brief,
+          numPieces 
+        })
       });
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const lines = decoder.decode(value).split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              handleAgentUpdate(data);
-            } catch(e) {}
+      const { jobId } = await startRes.json();
+      
+      // Poll for updates
+      let lastLogCount = 0;
+      let lastCompletedCount = 0;
+      
+      const poll = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/job/${jobId}`);
+          const job = await statusRes.json();
+          
+          // Show new logs
+          const newLogs = job.logs.slice(lastLogCount);
+          newLogs.forEach(log => {
+            addActivity(log.msg);
+            // Update agent status based on log content
+            if (log.msg.includes('VP creating')) setAgentStatus('vp', 'working', 'Working...');
+            if (log.msg.includes('Writer working')) setAgentStatus('writer', 'working', 'Working...');
+            if (log.msg.includes('Writer done')) setAgentStatus('writer', 'done', 'Done ✓');
+            if (log.msg.includes('Designer working')) setAgentStatus('designer', 'working', 'Working...');
+            if (log.msg.includes('Designer done')) setAgentStatus('designer', 'done', 'Done ✓');
+            if (log.msg.includes('Social Media working')) setAgentStatus('social', 'working', 'Working...');
+            if (log.msg.includes('Social done')) setAgentStatus('social', 'done', 'Done ✓');
+            if (log.msg.includes('VP reviewing')) setAgentStatus('vp', 'working', 'Reviewing...');
+            if (log.msg.includes('VP approved')) setAgentStatus('vp', 'done', 'Done ✓');
+            if (log.msg.includes('saved to Airtable')) loadQueueBadge();
+          });
+          lastLogCount = job.logs.length;
+          
+          // Show new completed pieces
+          if (job.completed.length > lastCompletedCount) {
+            currentResults = {};
+            job.completed.forEach(p => {
+              currentResults.writer = p.writer;
+              currentResults.designer = p.designer;
+              currentResults.social = p.social;
+            });
+            lastCompletedCount = job.completed.length;
+            if (Object.keys(currentResults).length > 0) showOutput();
           }
+          
+          // Check if done
+          if (job.status === 'complete' || job.status === 'error') {
+            clearInterval(poll);
+            runBtn.disabled = false;
+            runBtn.textContent = '▶ Run Agents';
+            document.getElementById('systemStatus').textContent = '● All agents ready';
+            document.getElementById('systemStatus').style.background = '#E1F5EE';
+            document.getElementById('systemStatus').style.color = '#085041';
+            
+            if (job.status === 'complete') {
+              addActivity(`🎉 All ${job.numPieces} pieces complete and saved to review queue!`);
+              if (job.calendarNote) addActivity(`📅 Tomorrow: ${job.calendarNote}`);
+            }
+            loadQueueBadge();
+          }
+        } catch(e) {
+          console.log('Poll error:', e);
         }
-      }
+      }, 3000); // Poll every 3 seconds
+      
     } catch (error) {
       addActivity('❌ Error: ' + error.message);
+      runBtn.disabled = false;
+      runBtn.textContent = '▶ Run Agents';
     }
-
-    runBtn.disabled = false;
-    runBtn.textContent = '▶ Run Agents';
-    document.getElementById('systemStatus').textContent = '● All agents ready';
-    document.getElementById('systemStatus').style.background = '#E1F5EE';
-    document.getElementById('systemStatus').style.color = '#085041';
   }
 
   function handleAgentUpdate(data) {

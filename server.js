@@ -32,255 +32,264 @@ You are a strategic marketing director who thinks in campaigns, narratives, and 
 
 ${BRAND_VOICE}
 
-When you receive a campaign brief you do two things:
-1. Build a multi-day content calendar that tells a story across days
-2. For today's batch, create exactly the number of pieces requested (3-5)
+When you receive a campaign brief create exactly the number of pieces requested.
+Vary content types across pieces — never repeat the same content_type twice in one batch.
+Content types to choose from: educational, inspirational, product, social-proof, tips, behind-the-scenes.
 
-Content type variety to rotate through:
-- Educational: explain the science behind hair damage and repair
-- Inspirational: transformation stories, confidence, feeling good
-- Product focused: specific product benefits and how to use
-- System focused: Clean → Repair → Seal explained in new ways
-- Social proof: customer results, testimonials, before/after concepts
-- Behind the scenes: ingredients, sourcing, brand story
-- Tips and tutorials: hair care advice beyond just our products
-
-Respond in JSON format:
+Respond ONLY with valid JSON — no text before or after:
 {
-  "strategy": "overall campaign strategy and narrative arc",
-  "calendar_note": "how today's pieces fit into the larger story and what direction tomorrow should go",
+  "strategy": "overall campaign strategy",
+  "calendar_note": "what direction tomorrow should go",
   "pieces": [
     {
       "id": 1,
-      "day_theme": "what today's overall content theme is",
       "theme": "specific angle for this piece",
-      "content_type": "educational/inspirational/product/system/social proof/tips/behind the scenes",
-      "narrative_role": "how this piece connects to the larger campaign story",
-      "writer_task": "specific writing instructions with tone, length, and angle",
-      "designer_task": "specific visual design instructions with mood, colors, and composition",
+      "content_type": "educational",
+      "writer_task": "specific writing instructions",
+      "designer_task": "specific visual design instructions",
       "social_task": "specific social media instructions for Instagram, Facebook, and TikTok"
     }
   ]
-}
+}`,
 
-Create exactly the number of content pieces requested. Make each piece distinct in angle and content type.`,
-
-  writer: `You are an expert content writer and copywriter for Tresse Botanicals.
+  writer: `You are an expert content writer for Tresse Botanicals.
 ${BRAND_VOICE}
-You receive specific writing tasks and produce high quality on-brand content.
-Be creative, engaging, and always reinforce the Clean → Repair → Seal system.
+Produce high quality on-brand content for the specific task given.
 Write compelling headlines, body copy, and calls to action.
 Return complete written content ready for review.`,
 
   designer: `You are a creative director for Tresse Botanicals.
 ${BRAND_VOICE}
-You receive design tasks and produce detailed actionable design briefs.
-Include: dimensions for each platform, color palette (soft botanicals — greens, creams, blush tones), typography direction, imagery description, copy placement, and mood.
+Produce detailed actionable design briefs.
+Include: dimensions for each platform, color palette (soft botanicals — greens, creams, blush tones), typography, imagery direction, copy placement.
 Make briefs specific enough that a designer or AI tool can execute immediately.`,
 
   social: `You are a social media specialist for Tresse Botanicals.
 ${BRAND_VOICE}
-You receive social media tasks and produce platform-optimized posts.
+Produce platform-optimized posts for each piece.
 For each piece create:
 - Instagram: caption (150-200 words), 15-20 hashtags, story concept
 - Facebook: longer form post (200-300 words), engagement question
-- TikTok: video concept, hook (first 3 seconds), script outline, trending audio suggestion
+- TikTok: video concept, hook (first 3 seconds), script outline
 Return complete ready-to-post content for all three platforms.`,
 
-  reviewer: `You are the VP of Marketing for Tresse Botanicals reviewing content your team produced.
+  reviewer: `You are the VP of Marketing for Tresse Botanicals reviewing content.
 ${BRAND_VOICE}
-Review the content package and evaluate:
-1. Brand voice alignment
-2. Message clarity — is Clean → Repair → Seal communicated?
-3. Audience relevance
-4. Quality and creativity
-5. Platform appropriateness
-
-Respond in JSON format:
+Review the content package and respond ONLY with valid JSON — no text before or after:
 {
-  "approved": true or false,
-  "overall_score": 1-10,
-  "feedback": "specific feedback if not approved",
+  "approved": true,
+  "overall_score": 8,
+  "feedback": "",
   "approved_content": {
-    "writer": "final approved or revised writing",
-    "designer": "final approved or revised design brief",
-    "social": "final approved or revised social posts"
+    "writer": "final approved writing here",
+    "designer": "final approved design brief here",
+    "social": "final approved social posts here"
   }
 }`
 };
 
-async function runSinglePiece(piece, brief, send, pieceNum, total) {
-  send({ agent: 'system', status: 'info', message: `Creating piece ${pieceNum} of ${total}: ${piece.theme}` });
+// Store pending jobs in memory
+const jobs = {};
 
-  // Writer
-  send({ agent: 'writer', status: 'working', message: `Writing piece ${pieceNum}...` });
-  const writerResponse = await claude.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1000,
-    messages: [{ role: 'user', content: `Brief: ${brief}\n\nYour specific task: ${piece.writer_task}\n\nTheme: ${piece.theme}` }],
-    system: agents.writer
-  });
-  const writerResult = writerResponse.content[0].text;
-  send({ agent: 'writer', status: 'done', message: `Piece ${pieceNum} written` });
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
 
-  // Designer
-  send({ agent: 'designer', status: 'working', message: `Designing piece ${pieceNum}...` });
-  const designerResponse = await claude.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1000,
-    messages: [{ role: 'user', content: `Brief: ${brief}\n\nYour specific task: ${piece.designer_task}\n\nTheme: ${piece.theme}\n\nWritten content to design around:\n${writerResult}` }],
-    system: agents.designer
-  });
-  const designerResult = designerResponse.content[0].text;
-  send({ agent: 'designer', status: 'done', message: `Piece ${pieceNum} designed` });
+async function processSinglePiece(brief, piece, pieceNum, total, jobId) {
+  const job = jobs[jobId];
+  if (!job) return;
 
-  // Social
-  send({ agent: 'social', status: 'working', message: `Creating social posts for piece ${pieceNum}...` });
-  const socialResponse = await claude.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1000,
-    messages: [{ role: 'user', content: `Brief: ${brief}\n\nYour specific task: ${piece.social_task}\n\nTheme: ${piece.theme}\n\nWritten content:\n${writerResult}` }],
-    system: agents.social
-  });
-  const socialResult = socialResponse.content[0].text;
-  send({ agent: 'social', status: 'done', message: `Piece ${pieceNum} social posts created` });
+  const log = (msg) => {
+    job.logs.push({ time: new Date().toLocaleTimeString(), msg });
+  };
 
-  // VP Review
-  send({ agent: 'vp', status: 'working', message: `VP reviewing piece ${pieceNum}...` });
-  const reviewResponse = await claude.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1500,
-    messages: [{
-      role: 'user',
-      content: `Review this content package for piece ${pieceNum} - Theme: ${piece.theme}\n\nWRITER OUTPUT:\n${writerResult}\n\nDESIGNER OUTPUT:\n${designerResult}\n\nSOCIAL MEDIA OUTPUT:\n${socialResult}`
-    }],
-    system: agents.reviewer
-  });
-
-  let reviewResult;
   try {
-    const reviewText = reviewResponse.content[0].text;
-    const jsonMatch = reviewText.match(/\{[\s\S]*\}/);
-    reviewResult = jsonMatch ? JSON.parse(jsonMatch[0]) : { approved: true, overall_score: 8, approved_content: { writer: writerResult, designer: designerResult, social: socialResult }};
-  } catch {
-    reviewResult = { approved: true, overall_score: 8, approved_content: { writer: writerResult, designer: designerResult, social: socialResult }};
-  }
+    log(`Starting piece ${pieceNum} of ${total}: ${piece.theme} [${piece.content_type}]`);
 
-  if (!reviewResult.approved) {
-    send({ agent: 'vp', status: 'working', message: `VP revising piece ${pieceNum}: ${reviewResult.feedback}` });
-    const reviseResponse = await claude.messages.create({
+    // Writer
+    log(`Writer working on piece ${pieceNum}...`);
+    const writerRes = await claude.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: `Brief: ${brief}\nTask: ${piece.writer_task}\nTheme: ${piece.theme}\nContent type: ${piece.content_type}` }],
+      system: agents.writer
+    });
+    const writerResult = writerRes.content[0].text;
+    log(`Writer done for piece ${pieceNum}`);
+
+    // Designer
+    log(`Designer working on piece ${pieceNum}...`);
+    const designerRes = await claude.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: `Brief: ${brief}\nTask: ${piece.designer_task}\nTheme: ${piece.theme}\nWritten content:\n${writerResult}` }],
+      system: agents.designer
+    });
+    const designerResult = designerRes.content[0].text;
+    log(`Designer done for piece ${pieceNum}`);
+
+    // Social
+    log(`Social Media working on piece ${pieceNum}...`);
+    const socialRes = await claude.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: `Brief: ${brief}\nTask: ${piece.social_task}\nTheme: ${piece.theme}\nWritten content:\n${writerResult}` }],
+      system: agents.social
+    });
+    const socialResult = socialRes.content[0].text;
+    log(`Social done for piece ${pieceNum}`);
+
+    // VP Review
+    log(`VP reviewing piece ${pieceNum}...`);
+    const reviewRes = await claude.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1500,
       messages: [{
         role: 'user',
-        content: `Revise and improve this content based on feedback.\n\nFeedback: ${reviewResult.feedback}\n\nOriginal writer content:\n${writerResult}\n\nOriginal social content:\n${socialResult}`
+        content: `Review piece ${pieceNum} - Theme: ${piece.theme}\n\nWRITER:\n${writerResult}\n\nDESIGNER:\n${designerResult}\n\nSOCIAL:\n${socialResult}`
       }],
-      system: agents.writer
+      system: agents.reviewer
     });
-    reviewResult.approved_content.writer = reviseResponse.content[0].text;
+
+    let reviewResult;
+    try {
+      const reviewText = reviewRes.content[0].text;
+      const jsonMatch = reviewText.match(/\{[\s\S]*\}/);
+      reviewResult = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch {
+      reviewResult = null;
+    }
+
+    const finalWriter = reviewResult?.approved_content?.writer || writerResult;
+    const finalDesigner = reviewResult?.approved_content?.designer || designerResult;
+    const finalSocial = reviewResult?.approved_content?.social || socialResult;
+    const score = reviewResult?.overall_score || 8;
+
+    log(`VP approved piece ${pieceNum} (Score: ${score}/10)`);
+
+    // Save to Airtable
+    try {
+      await base('Content').create([{
+        fields: {
+          Name: `[${piece.content_type}] ${piece.theme}`,
+          Content: `WRITTEN CONTENT:\n${finalWriter}\n\n---\n\nDESIGNER BRIEF:\n${finalDesigner}\n\n---\n\nSOCIAL MEDIA POSTS:\n${finalSocial}`,
+          Agent: 'VP Approved',
+          Status: 'Needs Review',
+          Brief: brief,
+          Notes: `VP Score: ${score}/10 | Type: ${piece.content_type}`
+        }
+      }], {typecast: true});
+      log(`Piece ${pieceNum} saved to Airtable`);
+    } catch (err) {
+      log(`Airtable error for piece ${pieceNum}: ${err.message}`);
+    }
+
+    job.completed.push({
+      pieceNum,
+      theme: piece.theme,
+      content_type: piece.content_type,
+      score,
+      writer: finalWriter,
+      designer: finalDesigner,
+      social: finalSocial
+    });
+
+  } catch (err) {
+    log(`Error on piece ${pieceNum}: ${err.message}`);
+    job.errors.push({ pieceNum, error: err.message });
   }
-
-  send({ agent: 'vp', status: 'done', message: `Piece ${pieceNum} approved (Score: ${reviewResult.overall_score}/10)` });
-
-  return {
-    theme: piece.theme,
-    content_type: piece.content_type || 'content',
-    score: reviewResult.overall_score,
-    writer: reviewResult.approved_content.writer,
-    designer: reviewResult.approved_content.designer || designerResult,
-    social: reviewResult.approved_content.social || socialResult
-  };
 }
 
+// Start a job — returns immediately with jobId
 app.post('/api/run', async (req, res) => {
   const { brief, numPieces = 3 } = req.body;
+  const jobId = generateId();
 
-  try {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-    });
+  jobs[jobId] = {
+    status: 'running',
+    brief,
+    numPieces,
+    logs: [],
+    completed: [],
+    errors: [],
+    strategy: '',
+    calendarNote: ''
+  };
 
-    const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  res.json({ jobId });
 
-    // VP Strategy
-    send({ agent: 'vp', status: 'working', message: `Creating ${numPieces}-piece content calendar strategy...` });
-    const vpResponse = await claude.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: `Create a campaign strategy with exactly ${numPieces} content pieces for this brief: ${brief}` }],
-      system: agents.vp
-    });
+  // Run async in background
+  (async () => {
+    const job = jobs[jobId];
 
-    let vpResult;
     try {
-      const vpText = vpResponse.content[0].text;
-      const jsonMatch = vpText.match(/\{[\s\S]*\}/);
-      vpResult = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    } catch {
-      vpResult = null;
-    }
+      job.logs.push({ time: new Date().toLocaleTimeString(), msg: `VP creating ${numPieces}-piece content calendar...` });
 
-    if (!vpResult || !vpResult.pieces) {
-      vpResult = {
-        strategy: 'Campaign strategy created',
-        calendar_note: 'Continue building on today\'s themes tomorrow',
-        pieces: Array.from({length: numPieces}, (_, i) => ({
-          id: i + 1,
-          theme: `Content piece ${i + 1}`,
-          content_type: 'educational',
-          writer_task: brief,
-          designer_task: brief,
-          social_task: brief
-        }))
-      };
-    }
+      const vpRes = await claude.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: `Create exactly ${numPieces} content pieces for: ${brief}` }],
+        system: agents.vp
+      });
 
-    send({ agent: 'vp', status: 'done', message: `Strategy ready: ${vpResult.strategy}` });
-    send({ agent: 'system', status: 'info', message: `Calendar note: ${vpResult.calendar_note}` });
-
-    // Run each piece
-    const allResults = [];
-    for (let i = 0; i < vpResult.pieces.length; i++) {
-      const result = await runSinglePiece(vpResult.pieces[i], brief, send, i + 1, vpResult.pieces.length);
-      allResults.push(result);
-
-      // Save each piece to Airtable
+      let vpResult;
       try {
-        await base('Content').create([{
-          fields: {
-            Name: `[${result.content_type}] ${result.theme}`,
-            Content: `WRITTEN CONTENT:\n${result.writer}\n\n---\n\nDESIGNER BRIEF:\n${result.designer}\n\n---\n\nSOCIAL MEDIA POSTS:\n${result.social}`,
-            Agent: 'VP Approved',
-            Status: 'Needs Review',
-            Brief: brief,
-            Notes: `VP Score: ${result.score}/10 | Type: ${result.content_type}`
-          }
-        }], {typecast: true});
-        send({ agent: 'system', status: 'saving', message: `Piece ${i + 1} saved to review queue` });
-      } catch (airtableError) {
-        console.log('Airtable error:', airtableError.message);
+        const vpText = vpRes.content[0].text;
+        const jsonMatch = vpText.match(/\{[\s\S]*\}/);
+        vpResult = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+      } catch {
+        vpResult = null;
       }
 
-      send({ agent: 'system', status: 'piece_complete', result, pieceNum: i + 1 });
+      if (!vpResult?.pieces) {
+        const types = ['educational', 'inspirational', 'product', 'social-proof', 'tips'];
+        vpResult = {
+          strategy: 'Campaign strategy created',
+          calendar_note: 'Continue building on today themes tomorrow',
+          pieces: Array.from({length: numPieces}, (_, i) => ({
+            id: i + 1,
+            theme: `Content piece ${i + 1}`,
+            content_type: types[i % types.length],
+            writer_task: brief,
+            designer_task: brief,
+            social_task: brief
+          }))
+        };
+      }
+
+      job.strategy = vpResult.strategy;
+      job.calendarNote = vpResult.calendar_note;
+      job.logs.push({ time: new Date().toLocaleTimeString(), msg: `Strategy: ${vpResult.strategy}` });
+      job.logs.push({ time: new Date().toLocaleTimeString(), msg: `Tomorrow: ${vpResult.calendar_note}` });
+
+      // Process pieces one at a time to avoid timeout
+      for (let i = 0; i < vpResult.pieces.length; i++) {
+        await processSinglePiece(brief, vpResult.pieces[i], i + 1, vpResult.pieces.length, jobId);
+      }
+
+      job.status = 'complete';
+      job.logs.push({ time: new Date().toLocaleTimeString(), msg: `All ${vpResult.pieces.length} pieces complete!` });
+
+    } catch (err) {
+      job.status = 'error';
+      job.logs.push({ time: new Date().toLocaleTimeString(), msg: `Fatal error: ${err.message}` });
     }
+  })();
+});
 
-    send({
-      agent: 'system',
-      status: 'complete',
-      message: `All ${vpResult.pieces.length} pieces complete and VP approved! Check your review queue.`,
-      results: allResults,
-      calendarNote: vpResult.calendar_note
-    });
-
-    res.end();
-
-  } catch (error) {
-    console.log('Server error:', error);
-    res.write(`data: ${JSON.stringify({ agent: 'system', status: 'error', message: error.message })}\n\n`);
-    res.end();
-  }
+// Poll for job status
+app.get('/api/job/:jobId', (req, res) => {
+  const job = jobs[req.params.jobId];
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  res.json({
+    status: job.status,
+    logs: job.logs,
+    completed: job.completed,
+    errors: job.errors,
+    strategy: job.strategy,
+    calendarNote: job.calendarNote,
+    numPieces: job.numPieces
+  });
 });
 
 app.get('/api/queue', async (req, res) => {
