@@ -95,7 +95,7 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-async function processSinglePiece(brief, piece, pieceNum, total, jobId) {
+async function processSinglePiece(piece, brief, send, pieceNum, total, jobId, campaignName) {
   const job = jobs[jobId];
   if (!job) return;
 
@@ -171,13 +171,14 @@ async function processSinglePiece(brief, piece, pieceNum, total, jobId) {
     try {
       await base('Content').create([{
         fields: {
-          Name: `[${piece.content_type}] ${piece.theme}`,
-          Content: `WRITTEN CONTENT:\n${finalWriter}\n\n---\n\nDESIGNER BRIEF:\n${finalDesigner}\n\n---\n\nSOCIAL MEDIA POSTS:\n${finalSocial}`,
-          Agent: 'VP Approved',
-          Status: 'Needs Review',
-          Brief: brief,
-          Notes: `VP Score: ${score}/10 | Type: ${piece.content_type}`
-        }
+            Name: `[${piece.content_type}] ${piece.theme}`,
+            Content: `WRITTEN CONTENT:\n${finalWriter}\n\n---\n\nDESIGNER BRIEF:\n${finalDesigner}\n\n---\n\nSOCIAL MEDIA POSTS:\n${finalSocial}`,
+            Agent: 'VP Approved',
+            Status: 'Needs Review',
+            Brief: brief,
+            Campaign: campaignName || 'Untitled Campaign',
+            Notes: `VP Score: ${score}/10 | Type: ${piece.content_type}`
+          }
       }], {typecast: true});
       log(`Piece ${pieceNum} saved to Airtable`);
     } catch (err) {
@@ -209,6 +210,7 @@ app.post('/api/run', async (req, res) => {
     status: 'running',
     brief,
     numPieces,
+    campaignName: req.body.campaignName || 'Untitled Campaign',
     logs: [],
     completed: [],
     errors: [],
@@ -264,7 +266,7 @@ app.post('/api/run', async (req, res) => {
 
       // Process pieces one at a time to avoid timeout
       for (let i = 0; i < vpResult.pieces.length; i++) {
-        await processSinglePiece(brief, vpResult.pieces[i], i + 1, vpResult.pieces.length, jobId);
+        await processSinglePiece(vpResult.pieces[i], brief, send, i + 1, vpResult.pieces.length, jobId, job.campaignName);
       }
 
       job.status = 'complete';
@@ -294,10 +296,13 @@ app.get('/api/job/:jobId', (req, res) => {
 
 app.get('/api/queue', async (req, res) => {
   try {
-    const records = await base('Content').select({
-      filterByFormula: "{Status} = 'Needs Review'",
+    const showAll = req.query.all === 'true';
+    const formula = showAll ? '' : "{Status} = 'Needs Review'";
+    const options = {
       sort: [{field: 'Created', direction: 'desc'}]
-    }).all();
+    };
+    if (formula) options.filterByFormula = formula;
+    const records = await base('Content').select(options).all();
     res.json(records.map(r => ({ id: r.id, ...r.fields })));
   } catch (error) {
     console.log('Queue error:', error.message);

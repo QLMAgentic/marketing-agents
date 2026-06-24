@@ -92,11 +92,23 @@
       height: 80px;
       font-family: inherit;
       line-height: 1.5;
-      transition: border-color 0.2s;
     }
     .brief-textarea:focus { outline: none; border-color: #7C5CFC; }
+    
+    .campaign-input {
+      width: 100%;
+      font-size: 13px;
+      color: #1D1D1F;
+      background: #F5F5F7;
+      border: 1px solid #E5E5E7;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    .campaign-input:focus { outline: none; border-color: #7C5CFC; }
+
     .brief-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
-    .brief-hint { font-size: 12px; color: #999; }
     .btn-run {
       background: #7C5CFC;
       color: white;
@@ -106,7 +118,6 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
     }
     .btn-run:hover { background: #6A4AE8; }
     .btn-run:disabled { background: #C4B5FD; cursor: not-allowed; }
@@ -121,103 +132,189 @@
     }
     .agent-card.working { border-color: #F59E0B; background: #FFFBEB; }
     .agent-card.done { border-color: #10B981; background: #ECFDF5; }
-    .agent-card.error { border-color: #EF4444; background: #FEF2F2; }
-    .agent-name { font-size: 13px; font-weight: 600; color: #1D1D1F; margin-bottom: 2px; }
+    .agent-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
     .agent-role { font-size: 11px; color: #999; margin-bottom: 10px; }
-    .agent-status-pill {
-      font-size: 11px;
-      font-weight: 500;
-      padding: 3px 10px;
-      border-radius: 20px;
-      display: inline-block;
-    }
+    .agent-status-pill { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; display: inline-block; }
     .pill-idle { background: #E5E5E7; color: #666; }
     .pill-working { background: #FEF3CD; color: #7A4F00; }
     .pill-done { background: #D1FAE5; color: #065F46; }
-    .pill-error { background: #FEE2E2; color: #991B1B; }
 
     .activity-feed { max-height: 160px; overflow-y: auto; }
-    .activity-item {
-      font-size: 12px;
-      color: #555;
-      padding: 6px 0;
-      border-bottom: 1px solid #F5F5F7;
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-    }
+    .activity-item { font-size: 12px; color: #555; padding: 6px 0; border-bottom: 1px solid #F5F5F7; display: flex; gap: 8px; }
     .activity-item:last-child { border-bottom: none; }
-    .activity-time { color: #999; white-space: nowrap; flex-shrink: 0; }
+    .activity-time { color: #999; white-space: nowrap; }
     .activity-empty { font-size: 13px; color: #999; text-align: center; padding: 20px; }
 
-    .queue-item {
-      padding: 14px 0;
-      border-bottom: 1px solid #F5F5F7;
+    /* Kanban Board */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      align-items: start;
     }
-    .queue-item:last-child { border-bottom: none; }
-    .queue-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .queue-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-    .type-writer { background: #D1FAE5; color: #065F46; }
-    .type-designer { background: #FEE2E2; color: #991B1B; }
-    .type-social { background: #EDE9FE; color: #5B21B6; }
-    .queue-title { font-size: 13px; font-weight: 500; color: #1D1D1F; flex: 1; }
-    .queue-content {
-      font-size: 12px;
-      color: #666;
-      background: #F5F5F7;
-      border-radius: 6px;
-      padding: 10px;
+    .kanban-column {
+      background: #F0F0F2;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .kanban-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .kanban-col-title { font-size: 13px; font-weight: 600; color: #555; }
+    .kanban-col-count { font-size: 11px; background: white; border: 1px solid #E5E5E7; padding: 2px 8px; border-radius: 10px; color: #999; }
+
+    /* Content Cards */
+    .content-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #E5E5E7;
       margin-bottom: 10px;
-      max-height: 80px;
-      overflow-y: auto;
-      line-height: 1.5;
-      white-space: pre-wrap;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
     }
-    .queue-actions { display: flex; gap: 8px; align-items: center; }
-    .btn-approve {
-      background: #D1FAE5;
-      color: #065F46;
+    .content-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .content-card.card-open { 
+      border: 2px solid #2E7D32; 
+      box-shadow: 0 0 0 3px rgba(46,125,50,0.15), 0 0 16px rgba(46,125,50,0.25);
+    }
+    
+    .content-card-header {
+      padding: 12px 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .content-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .content-card-campaign { font-size: 10px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.06em; }
+    .content-card-title { font-size: 13px; font-weight: 600; color: #1D1D1F; line-height: 1.4; }
+    .content-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    
+    .type-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+    .type-educational { background: #E1F5EE; color: #065F46; }
+    .type-inspirational { background: #EDE9FE; color: #5B21B6; }
+    .type-product { background: #FEE2E2; color: #991B1B; }
+    .type-social-proof { background: #FEF3C7; color: #92400E; }
+    .type-tips { background: #E0F2FE; color: #0C4A6E; }
+    .type-behind-the-scenes { background: #FCE7F3; color: #9D174D; }
+    
+    .score-badge { font-size: 10px; font-weight: 600; color: #7C5CFC; background: #F0EDFE; padding: 2px 8px; border-radius: 20px; }
+    .date-label { font-size: 10px; color: #999; margin-left: auto; }
+    
+    .expand-btn {
+      background: none;
       border: none;
-      border-radius: 6px;
-      padding: 6px 14px;
-      font-size: 12px;
-      font-weight: 600;
       cursor: pointer;
+      color: #999;
+      font-size: 16px;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
     }
-    .btn-approve:hover { background: #A7F3D0; }
-    .btn-revise {
+
+    /* Card expanded content */
+    .card-expanded { display: none; border-top: 1px solid #F5F5F7; }
+    .card-expanded.open { display: block; }
+
+    /* Visual placeholder */
+    .visual-placeholder {
       background: #F5F5F7;
-      color: #555;
-      border: 1px solid #E5E5E7;
-      border-radius: 6px;
-      padding: 6px 14px;
+      border-radius: 0;
+      padding: 16px;
+      border-bottom: 1px solid #E5E5E7;
+    }
+    .visual-placeholder-label { font-size: 10px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .visual-placeholder-box {
+      background: #E5E5E7;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      border: 2px dashed #CCC;
+    }
+    .visual-placeholder-box .icon { font-size: 24px; margin-bottom: 6px; }
+    .visual-placeholder-desc { font-size: 12px; color: #666; line-height: 1.5; margin-top: 6px; text-align: left; }
+
+    /* Platform sections */
+    .platform-sections { padding: 16px; }
+    .platform-block { margin-bottom: 16px; }
+    .platform-block:last-child { margin-bottom: 0; }
+    .platform-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .platform-instagram { background: #E1306C; }
+    .platform-facebook { background: #1877F2; }
+    .platform-tiktok { background: #000000; }
+    .platform-content {
       font-size: 12px;
+      color: #444;
+      line-height: 1.6;
+      background: #F9F9F9;
+      border-radius: 6px;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    /* VP Notes */
+    .vp-notes-section { padding: 0 16px 16px; }
+    .vp-notes-label { font-size: 11px; font-weight: 600; color: #7C5CFC; margin-bottom: 6px; }
+    .vp-notes-content { font-size: 12px; color: #555; line-height: 1.6; background: #F0EDFE; border-radius: 6px; padding: 10px 12px; }
+
+    /* Revision history */
+    .revision-section { border-top: 1px solid #F5F5F7; }
+    .revision-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
       cursor: pointer;
-    }
-    .btn-revise:hover { background: #E5E5E7; }
-    .revision-input {
-      flex: 1;
       font-size: 12px;
-      border: 1px solid #E5E5E7;
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-family: inherit;
-      color: #1D1D1F;
+      color: #999;
+      font-weight: 500;
     }
-    .revision-input:focus { outline: none; border-color: #7C5CFC; }
-    .queue-empty { font-size: 13px; color: #999; text-align: center; padding: 30px; }
+    .revision-toggle:hover { background: #F9F9F9; }
+    .revision-content { display: none; padding: 0 16px 12px; }
+    .revision-content.open { display: block; }
+    .revision-brief { font-size: 11px; color: #888; line-height: 1.5; background: #F5F5F7; border-radius: 6px; padding: 8px 10px; }
+
+    /* Card actions */
+    .card-actions { padding: 12px 16px; border-top: 1px solid #F5F5F7; display: flex; gap: 8px; align-items: center; }
+    .btn-approve { background: #D1FAE5; color: #065F46; border: none; border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-approve:hover { background: #A7F3D0; }
+    .btn-revise { background: #F5F5F7; color: #555; border: 1px solid #E5E5E7; border-radius: 6px; padding: 7px 14px; font-size: 12px; cursor: pointer; }
+    .btn-revise:hover { background: #E5E5E7; }
+    .revision-note-input { flex: 1; font-size: 12px; border: 1px solid #E5E5E7; border-radius: 6px; padding: 7px 10px; font-family: inherit; }
+    .revision-note-input:focus { outline: none; border-color: #7C5CFC; }
+
+    /* Filter bar */
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+    .filter-label { font-size: 12px; color: #999; }
+    .filter-btn { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid #E5E5E7; background: white; cursor: pointer; color: #555; }
+    .filter-btn.active { background: #7C5CFC; color: white; border-color: #7C5CFC; }
 
     .view { display: none; }
     .view.active { display: block; }
 
-    .content-block {
-      background: #F5F5F7;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 12px;
-    }
+    .content-block { background: #F5F5F7; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
     .content-block-title { font-size: 12px; font-weight: 600; color: #7C5CFC; margin-bottom: 8px; }
     .content-block-text { font-size: 13px; color: #333; line-height: 1.6; white-space: pre-wrap; }
+
+    .queue-empty { font-size: 13px; color: #999; text-align: center; padding: 40px; }
 
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -227,6 +324,7 @@
       .layout { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .agents-grid { grid-template-columns: repeat(2, 1fr); }
+      .kanban-board { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -238,18 +336,14 @@
 </div>
 
 <div class="layout">
-
   <div class="sidebar">
     <div class="nav-label">Workspace</div>
     <div class="nav-item active" onclick="showView('dashboard')">
       <div class="nav-dot" style="background:#7C5CFC"></div> Dashboard
     </div>
-    <div class="nav-item" onclick="showView('queue')">
-      <div class="nav-dot" style="background:#F59E0B"></div> Review Queue
+    <div class="nav-item" onclick="showView('board')">
+      <div class="nav-dot" style="background:#F59E0B"></div> Content Board
       <span class="badge" id="queueBadge">0</span>
-    </div>
-    <div class="nav-item" onclick="showView('approved')">
-      <div class="nav-dot" style="background:#10B981"></div> Approved
     </div>
     <div class="nav-label">Agents</div>
     <div class="nav-item">
@@ -272,14 +366,16 @@
 
   <div class="main">
 
+    <!-- Dashboard View -->
     <div class="view active" id="view-dashboard">
 
       <div class="card">
         <div class="card-title">New Campaign Brief</div>
-        <textarea class="brief-textarea" id="briefInput" placeholder="Describe what you need… e.g. 'Create a launch campaign for our new summer product line targeting homeowners aged 35-50. Tone: warm and aspirational. Platforms: Instagram and LinkedIn.'"></textarea>
-<div class="brief-footer">
+        <input class="campaign-input" id="campaignName" placeholder="Campaign name (e.g. Summer Repair Launch, Protein Treatment Spotlight)">
+        <textarea class="brief-textarea" id="briefInput" placeholder="Describe what you need… e.g. 'Create a launch campaign for our Complete System targeting women who color their hair. Tone: expert and empathetic. Platforms: Instagram, Facebook, TikTok.'"></textarea>
+        <div class="brief-footer">
           <div style="display:flex;align-items:center;gap:12px">
-            <span class="brief-hint">Pieces per run:</span>
+            <span style="font-size:12px;color:#999">Pieces:</span>
             <select id="numPieces" style="font-size:13px;border:1px solid #E5E5E7;border-radius:6px;padding:4px 8px;background:white">
               <option value="3">3 pieces</option>
               <option value="4">4 pieces</option>
@@ -323,36 +419,46 @@
         </div>
       </div>
 
-      <div class="card" id="outputCard" style="display:none">
-        <div class="card-title">Latest Output — Ready for Review</div>
-        <div id="outputContent"></div>
-      </div>
-
     </div>
 
-    <div class="view" id="view-queue">
-      <div class="card">
-        <div class="card-title">Review Queue</div>
-        <div id="queueList">
-          <div class="queue-empty">Loading queue...</div>
+    <!-- Content Board View -->
+    <div class="view" id="view-board">
+      <div class="filter-bar">
+        <span class="filter-label">Filter by campaign:</span>
+        <button class="filter-btn active" onclick="filterCampaign('all', this)">All</button>
+        <div id="campaignFilters"></div>
+      </div>
+      <div class="kanban-board">
+        <div class="kanban-column">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">📋 Needs Review</span>
+            <span class="kanban-col-count" id="count-review">0</span>
+          </div>
+          <div id="col-review"></div>
+        </div>
+        <div class="kanban-column">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">✏️ Needs Revision</span>
+            <span class="kanban-col-count" id="count-revision">0</span>
+          </div>
+          <div id="col-revision"></div>
+        </div>
+        <div class="kanban-column">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">✅ Approved</span>
+            <span class="kanban-col-count" id="count-approved">0</span>
+          </div>
+          <div id="col-approved"></div>
         </div>
       </div>
     </div>
 
-    <div class="view" id="view-approved">
-      <div class="card">
-        <div class="card-title">Approved Content</div>
-        <div id="approvedList">
-          <div class="queue-empty">No approved content yet</div>
-        </div>
-      </div>
-    </div>
-
+    <!-- Settings View -->
     <div class="view" id="view-settings">
       <div class="card">
         <div class="card-title">Brand Voice & Settings</div>
         <p style="font-size:13px;color:#666;margin-bottom:16px">These instructions are injected into every agent so all content stays on-brand.</p>
-        <textarea class="brief-textarea" id="brandVoice" style="height:120px" placeholder="e.g. Our brand is warm, professional, and approachable. We avoid jargon. Our audience is homeowners aged 35-55. We never use exclamation points. Our tone is confident but never pushy."></textarea>
+        <textarea class="brief-textarea" id="brandVoice" style="height:120px" placeholder="e.g. Our brand is warm, professional, and approachable..."></textarea>
         <div style="margin-top:12px">
           <button class="btn-run" onclick="saveBrandVoice()">Save Brand Voice</button>
         </div>
@@ -365,6 +471,8 @@
 <script>
   let currentResults = {};
   let brandVoice = localStorage.getItem('brandVoice') || '';
+  let allItems = [];
+  let activeCampaignFilter = 'all';
 
   if (brandVoice) document.getElementById('brandVoice').value = brandVoice;
 
@@ -378,13 +486,13 @@
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('view-' + view).classList.add('active');
-    if (view === 'queue') loadQueue();
-    if (view === 'approved') loadApproved();
+    if (view === 'board') loadBoard();
   }
 
   function setAgentStatus(agent, status, label) {
     const card = document.getElementById('agent-' + agent);
     const pill = document.getElementById('status-' + agent);
+    if (!card || !pill) return;
     card.className = 'agent-card ' + status;
     pill.className = 'agent-status-pill pill-' + status;
     pill.textContent = label;
@@ -401,8 +509,223 @@
     feed.insertBefore(item, feed.firstChild);
   }
 
-async function runAgents() {
+  function getTypeClass(type) {
+    const map = {
+      'educational': 'type-educational',
+      'inspirational': 'type-inspirational',
+      'product': 'type-product',
+      'social-proof': 'type-social-proof',
+      'tips': 'type-tips',
+      'behind-the-scenes': 'type-behind-the-scenes'
+    };
+    return map[type] || 'type-educational';
+  }
+
+  function parseContent(rawContent) {
+    const result = { instagram: '', facebook: '', tiktok: '', designer: '', writer: '' };
+    if (!rawContent) return result;
+
+    const sections = rawContent.split('---');
+    sections.forEach(section => {
+      const lower = section.toLowerCase();
+      if (lower.includes('designer brief') || lower.includes('design brief')) {
+        result.designer = section.replace(/DESIGNER BRIEF:|DESIGN BRIEF:/gi, '').trim();
+      } else if (lower.includes('written content') || lower.includes('writer')) {
+        result.writer = section.replace(/WRITTEN CONTENT:/gi, '').trim();
+      } else if (lower.includes('social media posts') || lower.includes('instagram')) {
+        const instaMatch = section.match(/INSTAGRAM[\s\S]*?(?=FACEBOOK|TIKTOK|$)/i);
+        if (instaMatch) result.instagram = instaMatch[0].replace(/INSTAGRAM:/gi, '').trim();
+        const fbMatch = section.match(/FACEBOOK[\s\S]*?(?=INSTAGRAM|TIKTOK|$)/i);
+        if (fbMatch) result.facebook = fbMatch[0].replace(/FACEBOOK:/gi, '').trim();
+        const ttMatch = section.match(/TIKTOK[\s\S]*?(?=INSTAGRAM|FACEBOOK|$)/i);
+        if (ttMatch) result.tiktok = ttMatch[0].replace(/TIKTOK:/gi, '').trim();
+      }
+    });
+
+    if (!result.instagram && !result.facebook) {
+      result.instagram = rawContent.substring(0, 500) + '...';
+    }
+
+    return result;
+  }
+
+  function buildCard(item) {
+    const parsed = parseContent(item.Content || '');
+    const typeClass = getTypeClass((item.Notes || '').match(/Type: ([^\s|]+)/)?.[1] || 'educational');
+    const contentType = (item.Notes || '').match(/Type: ([^\s|]+)/)?.[1] || 'content';
+    const score = (item.Notes || '').match(/VP Score: ([0-9.]+)/)?.[1] || '—';
+    const campaign = item.Campaign || 'Uncategorized';
+    const date = item.Created ? new Date(item.Created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    const title = (item.Name || '').replace(/^\[.*?\]\s*/, '');
+    const vpNotes = item['VP Notes'] || 'VP approved this content as on-brand and ready for review.';
+
+    return `
+      <div class="content-card" id="card-${item.id}" data-campaign="${campaign}">
+        <div class="content-card-header" onclick="toggleCard('${item.id}')">
+          <div class="content-card-campaign">${campaign}</div>
+          <div class="content-card-title">${title}</div>
+          <div class="content-card-meta">
+            <span class="type-badge ${typeClass}">${contentType}</span>
+            <span class="score-badge">⭐ ${score}/10</span>
+            <span class="date-label">${date}</span>
+            <button class="expand-btn" id="expand-${item.id}">▼</button>
+          </div>
+        </div>
+
+        <div class="card-expanded" id="expanded-${item.id}">
+          
+          <!-- Visual Placeholder -->
+          <div class="visual-placeholder">
+            <div class="visual-placeholder-label">🎨 Visual Asset</div>
+            <div class="visual-placeholder-box">
+              <div class="icon">🖼️</div>
+              <div style="font-size:12px;color:#888;font-weight:500">Image placeholder — visual integration coming soon</div>
+              ${parsed.designer ? `<div class="visual-placeholder-desc"><strong>Designer notes:</strong> ${parsed.designer.substring(0, 300)}${parsed.designer.length > 300 ? '...' : ''}</div>` : ''}
+            </div>
+          </div>
+
+          <!-- Platform Sections -->
+          <div class="platform-sections">
+            ${parsed.instagram ? `
+            <div class="platform-block">
+              <span class="platform-label platform-instagram">📷 Instagram</span>
+              <div class="platform-content">${parsed.instagram.substring(0, 600)}${parsed.instagram.length > 600 ? '...' : ''}</div>
+            </div>` : ''}
+            
+            ${parsed.facebook ? `
+            <div class="platform-block">
+              <span class="platform-label platform-facebook">👥 Facebook</span>
+              <div class="platform-content">${parsed.facebook.substring(0, 600)}${parsed.facebook.length > 600 ? '...' : ''}</div>
+            </div>` : ''}
+            
+            ${parsed.tiktok ? `
+            <div class="platform-block">
+              <span class="platform-label platform-tiktok">🎵 TikTok</span>
+              <div class="platform-content">${parsed.tiktok.substring(0, 600)}${parsed.tiktok.length > 600 ? '...' : ''}</div>
+            </div>` : ''}
+
+            ${!parsed.instagram && !parsed.facebook ? `
+            <div class="platform-block">
+              <span class="platform-label platform-instagram">📱 Content</span>
+              <div class="platform-content">${(item.Content || '').substring(0, 800)}...</div>
+            </div>` : ''}
+          </div>
+
+          <!-- VP Notes -->
+          <div class="vp-notes-section">
+            <div class="vp-notes-label">💼 VP of Marketing Notes</div>
+            <div class="vp-notes-content">${vpNotes}</div>
+          </div>
+
+          <!-- Revision History -->
+          <div class="revision-section">
+            <div class="revision-toggle" onclick="toggleRevision('${item.id}')">
+              <span>📋 Brief & History</span>
+              <span id="rev-arrow-${item.id}">▶</span>
+            </div>
+            <div class="revision-content" id="revision-${item.id}">
+              <div class="revision-brief"><strong>Original brief:</strong><br>${item.Brief ? item.Brief.substring(0, 400) + '...' : 'No brief recorded'}</div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          ${item.Status === 'Needs Review' || item.Status === 'Needs Revision' ? `
+          <div class="card-actions">
+            <input class="revision-note-input" id="note-${item.id}" placeholder="Revision notes (optional)...">
+            <button class="btn-approve" onclick="updateItem('${item.id}', 'Approved')">✓ Approve</button>
+            <button class="btn-revise" onclick="updateItem('${item.id}', 'Needs Revision')">↩ Revise</button>
+          </div>` : `
+          <div class="card-actions" style="justify-content:center">
+            <span style="font-size:12px;color:#10B981;font-weight:600">✅ Approved</span>
+          </div>`}
+
+        </div>
+      </div>`;
+  }
+
+  function toggleCard(id) {
+    const expanded = document.getElementById('expanded-' + id);
+    const arrow = document.getElementById('expand-' + id);
+    const card = document.getElementById('card-' + id);
+    const isOpen = expanded.classList.contains('open');
+    expanded.classList.toggle('open', !isOpen);
+    card.classList.toggle('card-open', !isOpen);
+    arrow.textContent = isOpen ? '▼' : '▲';
+  }
+
+  function toggleRevision(id) {
+    const content = document.getElementById('revision-' + id);
+    const arrow = document.getElementById('rev-arrow-' + id);
+    const isOpen = content.classList.contains('open');
+    content.classList.toggle('open', !isOpen);
+    arrow.textContent = isOpen ? '▶' : '▼';
+  }
+
+  function filterCampaign(campaign, btn) {
+    activeCampaignFilter = campaign;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderBoard(allItems);
+  }
+
+  function renderBoard(items) {
+    const filtered = activeCampaignFilter === 'all' ? items : items.filter(i => (i.Campaign || 'Uncategorized') === activeCampaignFilter);
+
+    const reviewItems = filtered.filter(i => i.Status === 'Needs Review');
+    const revisionItems = filtered.filter(i => i.Status === 'Needs Revision');
+    const approvedItems = filtered.filter(i => i.Status === 'Approved');
+
+    document.getElementById('col-review').innerHTML = reviewItems.length ? reviewItems.map(buildCard).join('') : '<div class="queue-empty">No items</div>';
+    document.getElementById('col-revision').innerHTML = revisionItems.length ? revisionItems.map(buildCard).join('') : '<div class="queue-empty">No items</div>';
+    document.getElementById('col-approved').innerHTML = approvedItems.length ? approvedItems.map(buildCard).join('') : '<div class="queue-empty">No items</div>';
+
+    document.getElementById('count-review').textContent = reviewItems.length;
+    document.getElementById('count-revision').textContent = revisionItems.length;
+    document.getElementById('count-approved').textContent = approvedItems.length;
+
+    // Build campaign filters
+    const campaigns = [...new Set(items.map(i => i.Campaign || 'Uncategorized'))];
+    const filterContainer = document.getElementById('campaignFilters');
+    filterContainer.innerHTML = campaigns.map(c => `<button class="filter-btn" onclick="filterCampaign('${c}', this)">${c}</button>`).join('');
+  }
+
+  async function loadBoard() {
+    try {
+      const res = await fetch('/api/queue?all=true');
+      allItems = await res.json();
+      renderBoard(allItems);
+      document.getElementById('queueBadge').textContent = allItems.filter(i => i.Status === 'Needs Review').length;
+    } catch(e) {
+      console.log('Board load error:', e);
+    }
+  }
+
+  async function loadQueueBadge() {
+    try {
+      const res = await fetch('/api/queue?all=true');
+      const items = await res.json();
+      document.getElementById('queueBadge').textContent = items.filter(i => i.Status === 'Needs Review').length;
+    } catch(e) {}
+  }
+
+  async function updateItem(id, status) {
+    const notes = document.getElementById('note-' + id)?.value || '';
+    try {
+      await fetch('/api/queue/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, notes })
+      });
+      addActivity(`${status === 'Approved' ? '✅ Approved' : '↩ Sent for revision'}: item updated`);
+      loadBoard();
+    } catch(e) {
+      alert('Could not update item.');
+    }
+  }
+
+  async function runAgents() {
     const brief = document.getElementById('briefInput').value.trim();
+    const campaignName = document.getElementById('campaignName').value.trim() || 'Untitled Campaign';
     if (!brief) { alert('Please enter a campaign brief first.'); return; }
 
     const numPieces = parseInt(document.getElementById('numPieces')?.value || 3);
@@ -412,37 +735,31 @@ async function runAgents() {
     document.getElementById('systemStatus').textContent = '● Agents working...';
     document.getElementById('systemStatus').style.background = '#FEF3CD';
     document.getElementById('systemStatus').style.color = '#7A4F00';
-    document.getElementById('outputCard').style.display = 'none';
-    currentResults = {};
 
     ['vp','writer','designer','social'].forEach(a => setAgentStatus(a, 'idle', 'Idle'));
 
     try {
-      // Start the job
       const startRes = await fetch('/api/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           brief: brandVoice ? `Brand Voice: ${brandVoice}\n\nBrief: ${brief}` : brief,
-          numPieces 
+          numPieces,
+          campaignName
         })
       });
       const { jobId } = await startRes.json();
       
-      // Poll for updates
       let lastLogCount = 0;
-      let lastCompletedCount = 0;
       
       const poll = setInterval(async () => {
         try {
           const statusRes = await fetch(`/api/job/${jobId}`);
           const job = await statusRes.json();
           
-          // Show new logs
           const newLogs = job.logs.slice(lastLogCount);
           newLogs.forEach(log => {
             addActivity(log.msg);
-            // Update agent status based on log content
             if (log.msg.includes('VP creating')) setAgentStatus('vp', 'working', 'Working...');
             if (log.msg.includes('Writer working')) setAgentStatus('writer', 'working', 'Working...');
             if (log.msg.includes('Writer done')) setAgentStatus('writer', 'done', 'Done ✓');
@@ -456,19 +773,6 @@ async function runAgents() {
           });
           lastLogCount = job.logs.length;
           
-          // Show new completed pieces
-          if (job.completed.length > lastCompletedCount) {
-            currentResults = {};
-            job.completed.forEach(p => {
-              currentResults.writer = p.writer;
-              currentResults.designer = p.designer;
-              currentResults.social = p.social;
-            });
-            lastCompletedCount = job.completed.length;
-            if (Object.keys(currentResults).length > 0) showOutput();
-          }
-          
-          // Check if done
           if (job.status === 'complete' || job.status === 'error') {
             clearInterval(poll);
             runBtn.disabled = false;
@@ -476,116 +780,19 @@ async function runAgents() {
             document.getElementById('systemStatus').textContent = '● All agents ready';
             document.getElementById('systemStatus').style.background = '#E1F5EE';
             document.getElementById('systemStatus').style.color = '#085041';
-            
             if (job.status === 'complete') {
-              addActivity(`🎉 All ${job.numPieces} pieces complete and saved to review queue!`);
+              addActivity(`🎉 All ${job.numPieces} pieces complete! Go to Content Board to review.`);
               if (job.calendarNote) addActivity(`📅 Tomorrow: ${job.calendarNote}`);
             }
             loadQueueBadge();
           }
-        } catch(e) {
-          console.log('Poll error:', e);
-        }
-      }, 3000); // Poll every 3 seconds
+        } catch(e) {}
+      }, 3000);
       
     } catch (error) {
       addActivity('❌ Error: ' + error.message);
       runBtn.disabled = false;
       runBtn.textContent = '▶ Run Agents';
-    }
-  }
-
-  function handleAgentUpdate(data) {
-    const nameMap = { vp: 'VP Marketing', writer: 'Writer', designer: 'Designer', social: 'Social Media', system: 'System' };
-
-    if (data.status === 'working') {
-      setAgentStatus(data.agent, 'working', 'Working...');
-      addActivity(`🤖 ${nameMap[data.agent]}: ${data.message}`);
-    } else if (data.status === 'done') {
-      setAgentStatus(data.agent, 'done', 'Done ✓');
-      addActivity(`✅ ${nameMap[data.agent]} completed`);
-      if (data.result) currentResults[data.agent] = data.result;
-      if (Object.keys(currentResults).length >= 3) showOutput();
-    } else if (data.status === 'saving') {
-      addActivity(`💾 ${data.message}`);
-    } else if (data.status === 'complete') {
-      addActivity(`🎉 ${data.message}`);
-      loadQueueBadge();
-    } else if (data.status === 'error') {
-      addActivity(`❌ Error: ${data.message}`);
-    }
-  }
-
-  function showOutput() {
-    const card = document.getElementById('outputCard');
-    const content = document.getElementById('outputContent');
-    card.style.display = 'block';
-
-    const sections = [
-      { key: 'writer', label: '✍️ Writer — Content' },
-      { key: 'designer', label: '🎨 Designer — Visual Brief' },
-      { key: 'social', label: '📱 Social Media — Posts' }
-    ];
-
-    content.innerHTML = sections.map(s => currentResults[s.key] ? `
-      <div class="content-block">
-        <div class="content-block-title">${s.label}</div>
-        <div class="content-block-text">${currentResults[s.key]}</div>
-      </div>` : '').join('');
-
-    card.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  async function loadQueueBadge() {
-    try {
-      const res = await fetch('/api/queue');
-      const items = await res.json();
-      document.getElementById('queueBadge').textContent = items.length;
-    } catch(e) {}
-  }
-
-  async function loadQueue() {
-    const list = document.getElementById('queueList');
-    list.innerHTML = '<div class="queue-empty">Loading...</div>';
-    try {
-      const res = await fetch('/api/queue');
-      const items = await res.json();
-      if (!items.length) { list.innerHTML = '<div class="queue-empty">No items waiting for review</div>'; return; }
-      list.innerHTML = items.map(item => `
-        <div class="queue-item" id="qi-${item.id}">
-          <div class="queue-header">
-            <span class="queue-type type-${(item.Agent||'writer').toLowerCase().replace(' ','-')}">${item.Agent || 'Content'}</span>
-            <span class="queue-title">${item.Name || 'Untitled'}</span>
-          </div>
-          <div class="queue-content">${item.Content || ''}</div>
-          <div class="queue-actions">
-            <input class="revision-input" id="note-${item.id}" placeholder="Revision notes (optional)...">
-            <button class="btn-approve" onclick="updateItem('${item.id}', 'Approved')">✓ Approve</button>
-            <button class="btn-revise" onclick="updateItem('${item.id}', 'Needs Revision')">↩ Revise</button>
-          </div>
-        </div>`).join('');
-    } catch(e) {
-      list.innerHTML = '<div class="queue-empty">Could not load queue — check Airtable setup</div>';
-    }
-  }
-
-  async function loadApproved() {
-    document.getElementById('approvedList').innerHTML = '<div class="queue-empty">Approved items appear here after you approve them from the Review Queue</div>';
-  }
-
-  async function updateItem(id, status) {
-    const notes = document.getElementById('note-' + id)?.value || '';
-    try {
-      await fetch('/api/queue/' + id, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, notes })
-      });
-      document.getElementById('qi-' + id)?.remove();
-      addActivity(`${status === 'Approved' ? '✅ Approved' : '↩ Sent for revision'}: item updated`);
-      loadQueueBadge();
-    } catch(e) {
-      alert('Could not update item. Check Airtable connection.');
     }
   }
 
