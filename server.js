@@ -13,6 +13,18 @@ app.use(express.static(path.join(__dirname)));
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
+const BRAND_VOICE = `
+BRAND: Tresse Botanicals
+WEBSITE: tressebotanicals.com
+POSITIONING: Professional-grade botanical hair care system for damaged, color-treated, chemically processed, heat-styled, or extension hair. System approach: Clean → Repair → Seal.
+DIFFERENTIATOR: Ingredients delivered at the right stage — not washed down the drain in shampoo. Quad-layer strengthening: deep cortex bond repair, mid-level fiber reinforcement, shaft-sealing proteins, sealing conditioner.
+AUDIENCE: Women 25-45 who invest in coloring, bleaching, heat styling, extensions. Frustrated hair looks dull and damaged too quickly.
+TONE: Expert but friendly. Empathetic. Confident but never pushy. Educational. Empowering.
+PRODUCTS: Complete Hair Strengthening & Repair System ($52.25), Protein Treatment, Leave-In Conditioning Spray, Nourishing Conditioner, Moisturizing Daily Shampoo, Weekly Reset Deep Cleanse Shampoo.
+KEY PHRASES: restoration, repair, strengthen, rebuild, seal, structural, quad-layer, botanical, professional-grade, Clean → Repair → Seal.
+AVOID: Generic claims without substance, jargon without explanation, aggressive sales language.
+PLATFORMS: Instagram, Facebook, TikTok, Blog.
+`;
 // Agent system prompts
 const agents = {
   vp: `You are the VP of Marketing for Tresse Botanicals with 20 years of experience.
