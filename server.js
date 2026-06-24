@@ -95,7 +95,7 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-async function processSinglePiece(piece, brief, send, pieceNum, total, jobId, campaignName) {
+async function processSinglePiece(piece, brief, _, pieceNum, total, jobId, campaignName) {
   const job = jobs[jobId];
   if (!job) return;
 
@@ -137,7 +137,7 @@ async function processSinglePiece(piece, brief, send, pieceNum, total, jobId, ca
       system: agents.social
     });
     const socialResult = socialRes.content[0].text;
-    log(`Social done for piece ${pieceNum}`);
+    log(`Social Media done for piece ${pieceNum}`);
 
     // VP Review
     log(`VP reviewing piece ${pieceNum}...`);
@@ -171,14 +171,14 @@ async function processSinglePiece(piece, brief, send, pieceNum, total, jobId, ca
     try {
       await base('Content').create([{
         fields: {
-            Name: `[${piece.content_type}] ${piece.theme}`,
-            Content: `WRITTEN CONTENT:\n${finalWriter}\n\n---\n\nDESIGNER BRIEF:\n${finalDesigner}\n\n---\n\nSOCIAL MEDIA POSTS:\n${finalSocial}`,
-            Agent: 'VP Approved',
-            Status: 'Needs Review',
-            Brief: brief,
-            Campaign: campaignName || 'Untitled Campaign',
-            Notes: `VP Score: ${score}/10 | Type: ${piece.content_type}`
-          }
+          Name: `[${piece.content_type}] ${piece.theme}`,
+          Content: `WRITTEN CONTENT:\n${finalWriter}\n\n---\n\nDESIGNER BRIEF:\n${finalDesigner}\n\n---\n\nSOCIAL MEDIA POSTS:\n${finalSocial}`,
+          Agent: 'VP Approved',
+          Status: 'Needs Review',
+          Brief: brief,
+          Campaign: campaignName || 'Untitled Campaign',
+          Notes: `VP Score: ${score}/10 | Type: ${piece.content_type}`
+        }
       }], {typecast: true});
       log(`Piece ${pieceNum} saved to Airtable`);
     } catch (err) {
@@ -189,10 +189,7 @@ async function processSinglePiece(piece, brief, send, pieceNum, total, jobId, ca
       pieceNum,
       theme: piece.theme,
       content_type: piece.content_type,
-      score,
-      writer: finalWriter,
-      designer: finalDesigner,
-      social: finalSocial
+      score
     });
 
   } catch (err) {
@@ -266,7 +263,7 @@ app.post('/api/run', async (req, res) => {
 
       // Process pieces one at a time to avoid timeout
       for (let i = 0; i < vpResult.pieces.length; i++) {
-        await processSinglePiece(vpResult.pieces[i], brief, send, i + 1, vpResult.pieces.length, jobId, job.campaignName);
+        await processSinglePiece(vpResult.pieces[i], brief, null, i + 1, vpResult.pieces.length, jobId, job.campaignName);
       }
 
       job.status = 'complete';
