@@ -309,8 +309,20 @@ app.get('/api/queue', async (req, res) => {
 
 app.patch('/api/queue/:id', async (req, res) => {
   try {
-    const { status, notes } = req.body;
-    await base('Content').update(req.params.id, { Status: status, Notes: notes || '' });
+    const { status, notes, scheduledDate } = req.body;
+    const fields = { Status: status };
+    if (notes) fields.Notes = notes;
+    if (scheduledDate) fields['Scheduled Date'] = new Date(scheduledDate).toISOString();
+    await base('Content').update(req.params.id, fields);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/queue/:id', async (req, res) => {
+  try {
+    await base('Content').destroy(req.params.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
