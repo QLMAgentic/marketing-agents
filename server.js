@@ -12,7 +12,54 @@ app.use(express.static(path.join(__dirname)));
 
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
+const BUFFER_API_KEY = process.env.BUFFER_API_KEY;
+const BUFFER_ORG_ID = process.env.BUFFER_ORG_ID;
 
+async function pushToBuffer(content, scheduledDate, channelIds) {
+  if (!BUFFER_API_KEY || !channelIds || channelIds.length === 0) {
+    return { success: false, reason: 'Buffer not configured' };
+  }
+
+  const results = [];
+  for (const channelId of channelIds) {
+    try {
+      const mutation = `
+        mutation CreateScheduledPost {
+          createPost(input: {
+            organizationId: "${BUFFER_ORG_ID}"
+            channelId: "${channelId}"
+            content: {
+              text: ${JSON.stringify(content)}
+            }
+            scheduling: {
+              scheduledAt: "${new Date(scheduledDate).toISOString()}"
+            }
+          }) {
+            ... on Post {
+              id
+              status
+            }
+          }
+        }
+      `;
+
+      const res = await fetch('https://api.buffer.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${BUFFER_API_KEY}`
+        },
+        body: JSON.stringify({ query: mutation })
+      });
+
+      const data = await res.json();
+      results.push({ channelId, success: !data.errors, data });
+    } catch (err) {
+      results.push({ channelId, success: false, error: err.message });
+    }
+  }
+  return results;
+}
 const BRAND_VOICE = `
 BRAND: Tresse Botanicals
 WEBSITE: tressebotanicals.com
@@ -314,6 +361,37 @@ app.patch('/api/queue/:id', async (req, res) => {
     if (notes) fields.Notes = notes;
     if (scheduledDate) fields['Scheduled Date'] = new Date(scheduledDate).toISOString();
     await base('Content').update(req.params.id, fields);
+
+    // Push to Buffer if scheduling
+    if (status === 'Scheduled' && scheduledDate && BUFFER_API_KEY) {
+      try {
+        // Get the record to pull content
+        const record = await base('Content').find(req.params.id);
+        const content = record.fields.Content || '';
+        
+        // Get Buffer channels
+        const channelsRes = await fetch('https://api.buffer.com', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${BUFFER_API_KEY}`
+          },
+          body: JSON.stringify({
+            query: `query { channels(input: { organizationId: "${BUFFER_ORG_ID}" }) { id service } }`
+          })
+        });
+        const channelsData = await channelsRes.json();
+        const channelIds = (channelsData.data?.channels || []).map(c => c.id);
+
+        if (channelIds.length > 0) {
+          await pushToBuffer(content.substring(0, 2200), scheduledDate, channelIds);
+          console.log('Pushed to Buffer successfully');
+        }
+      } catch (bufferErr) {
+        console.log('Buffer push error:', bufferErr.message);
+      }
+    }
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
